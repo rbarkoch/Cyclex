@@ -6,7 +6,7 @@ using System.Threading;
 
 namespace Cyclex
 {
-    public class CyclicExecutive : ICyclicExecutive
+    public class CyclicExecutive
     {
         public delegate void CompletedEventHandler(object sender, CyclicExecutiveCycleCompletedEventArgs args);
         public delegate void OverflowEventHandler(object sender, CyclicExecutiveOverflowEventArgs args);
@@ -20,7 +20,6 @@ namespace Cyclex
 
         public TimeSpan CycleTime { get; set; } = TimeSpan.FromSeconds(1);
         public bool IsRunning { get; private set; } = false;
-        public TimeSpan StopTimeout { get; set; } = Timeout.InfiniteTimeSpan;
         public bool StopOnOverflow { get; set; } = false;
         public bool StopOnException { get; set; } = true;
         public bool PropogateException { get; set; } = true;
@@ -29,6 +28,7 @@ namespace Cyclex
         private Stopwatch _stopwatch = new Stopwatch();
 
         private AutoResetEvent _stopLoopEvent = new AutoResetEvent(false);
+        private AutoResetEvent _stoppedEvent = new AutoResetEvent(false);
 
         public CyclicExecutive(Action methodToRun)
         {
@@ -49,6 +49,11 @@ namespace Cyclex
         public void Stop()
         {
             _stopLoopEvent.Set();
+        }
+
+        public bool TryWait(TimeSpan timeout)
+        {
+            return _stoppedEvent.WaitOne(timeout);
         }
 
         private void Loop()
@@ -98,6 +103,7 @@ namespace Cyclex
             } while (!shouldStop && !_stopLoopEvent.WaitOne(remainingTime));
 
             IsRunning = false;
+            _stoppedEvent.Set();
             Stopped?.Invoke(this, EventArgs.Empty);
         }
     }
