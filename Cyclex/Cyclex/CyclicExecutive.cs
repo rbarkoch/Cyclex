@@ -125,26 +125,26 @@ namespace Cyclex
     public class CyclicExecutiveOverflowEventArgs : EventArgs
     {
         public TimeSpan ExecutionTime { get; private set; }
-        public TimeSpan CycleTime { get; private set; }
-        public TimeSpan Overflow => ExecutionTime - CycleTime;
+        public TimeSpan TargetCycleTime { get; private set; }
+        public TimeSpan Overflow => ExecutionTime - TargetCycleTime;
 
-        public CyclicExecutiveOverflowEventArgs(TimeSpan executionTime, TimeSpan cycleTime)
+        public CyclicExecutiveOverflowEventArgs(TimeSpan executionTime, TimeSpan targetCycleTime)
         {
             ExecutionTime = executionTime;
-            CycleTime = cycleTime;
+            TargetCycleTime = targetCycleTime;
         }
     }
 
     public class CyclicExecutiveCycleCompletedEventArgs : EventArgs
     {
         public TimeSpan ExecutionTime { get; private set; }
-        public TimeSpan CycleTime { get; private set; }
-        public double Utilitization => ExecutionTime.TotalMilliseconds / CycleTime.TotalMilliseconds;
+        public TimeSpan ActualCycleTime { get; private set; }
+        public double Utilitization => ExecutionTime.TotalMilliseconds / ActualCycleTime.TotalMilliseconds;
 
-        public CyclicExecutiveCycleCompletedEventArgs(TimeSpan executionTime, TimeSpan cycleTime)
+        public CyclicExecutiveCycleCompletedEventArgs(TimeSpan executionTime, TimeSpan actualCycleTime)
         {
             ExecutionTime = executionTime;
-            CycleTime = cycleTime;
+            ActualCycleTime = actualCycleTime;
         }
     }
 }
