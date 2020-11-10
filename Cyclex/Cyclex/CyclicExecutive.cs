@@ -84,9 +84,7 @@ namespace Cyclex
                         shouldStop |= true;
                     }
                 }
-                _stopwatch.Stop();
-
-                CycleCompleted?.Invoke(this, new CyclicExecutiveCycleCompletedEventArgs(_stopwatch.Elapsed, CycleTime));
+                TimeSpan executionTime = _stopwatch.Elapsed;
 
                 TimeSpan timeDifference = CycleTime - _stopwatch.Elapsed;
                 remainingTime = timeDifference > TimeSpan.Zero ? timeDifference : TimeSpan.Zero;
@@ -100,7 +98,14 @@ namespace Cyclex
                         shouldStop |= true;
                     }
                 }
-            } while (!shouldStop && !_stopLoopEvent.WaitOne(remainingTime));
+
+                shouldStop |= _stopLoopEvent.WaitOne(remainingTime);
+
+                _stopwatch.Stop();
+                TimeSpan actualCycleTime = _stopwatch.Elapsed;
+
+                CycleCompleted?.Invoke(this, new CyclicExecutiveCycleCompletedEventArgs(executionTime, actualCycleTime));
+            } while (!shouldStop);
 
             IsRunning = false;
             _stoppedEvent.Set();
@@ -134,6 +139,7 @@ namespace Cyclex
     {
         public TimeSpan ExecutionTime { get; private set; }
         public TimeSpan CycleTime { get; private set; }
+        public double Utilitization => ExecutionTime.TotalMilliseconds / CycleTime.TotalMilliseconds;
 
         public CyclicExecutiveCycleCompletedEventArgs(TimeSpan executionTime, TimeSpan cycleTime)
         {
