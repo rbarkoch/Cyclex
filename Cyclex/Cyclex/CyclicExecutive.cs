@@ -32,6 +32,11 @@ namespace Cyclex
 
         public CyclicExecutive(Action methodToRun)
         {
+            if(methodToRun == null)
+            {
+                throw new ArgumentNullException(nameof(methodToRun));
+            }
+
             _methodToRun = methodToRun;
         }
 
