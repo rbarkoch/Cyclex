@@ -19,7 +19,7 @@ jobs:
 
     env:
       BUILD_CONFIG: 'Release'
-      SOLUTION: 'MethodMinder.sln'
+      SOLUTION: 'Cyclex.sln'
 
     runs-on: ubuntu-latest
 
