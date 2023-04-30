@@ -3,26 +3,51 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Cyclex
 {
-    public class CyclicExecutive
+    public class CyclicExecutive : ICyclicExecutive
     {
-        public delegate void CompletedEventHandler(object sender, CyclicExecutiveCycleCompletedEventArgs args);
-        public delegate void OverflowEventHandler(object sender, CyclicExecutiveOverflowEventArgs args);
-        public delegate void ExceptionEventHandler(object sender, CyclicExecutiveExceptionEventArgs args);
+        // ===== EVENTS ===== //
 
-        public event EventHandler? Stopped;
+        /// <inheritdoc />
         public event EventHandler? Started;
-        public event CompletedEventHandler? CycleCompleted;
-        public event OverflowEventHandler? CycleOverflow;
-        public event ExceptionEventHandler? CycleException;
 
+        /// <inheritdoc />
+        public event EventHandler? Stopped;
+
+        /// <inheritdoc />
+        public event EventHandler<CyclicExecutiveCycleCompletedEventArgs>? CycleCompleted;
+
+        /// <inheritdoc />
+        public event EventHandler<CyclicExecutiveOverflowEventArgs>? CycleOverflow;
+
+        /// <inheritdoc />
+        public event EventHandler<CyclicExecutiveExceptionEventArgs>? CycleException;
+
+
+
+        // ===== PROPERTIES ====== //
+
+        /// <inheritdoc />
         public TimeSpan CycleTime { get; set; } = TimeSpan.FromSeconds(1);
+
+        /// <inheritdoc />
         public bool IsRunning { get; private set; } = false;
+
+        /// <inheritdoc />
         public bool StopOnOverflow { get; set; } = false;
+
+        /// <inheritdoc />
         public bool StopOnException { get; set; } = true;
+
+        /// <inheritdoc />
         public bool PropogateException { get; set; } = true;
+
+
+
+        // ===== FIELDS ===== //
 
         private Action _methodToRun;
         private Stopwatch _stopwatch = new Stopwatch();
@@ -30,9 +55,13 @@ namespace Cyclex
         private AutoResetEvent _stopLoopEvent = new AutoResetEvent(false);
         private AutoResetEvent _stoppedEvent = new AutoResetEvent(false);
 
+
+        
+        // ===== CONSTRUCTOR ====== //
+
         public CyclicExecutive(Action methodToRun)
         {
-            if(methodToRun == null)
+            if (methodToRun == null)
             {
                 throw new ArgumentNullException(nameof(methodToRun));
             }
@@ -40,17 +69,28 @@ namespace Cyclex
             _methodToRun = methodToRun;
         }
 
+
+
+        // ===== METHODS ===== //
+
+        /// <inheritdoc />
         public void Start()
         {
+            if (IsRunning)
+            {
+                throw new Exception("Cyclic executive cannot be started when it is already running.");
+            }
             IsRunning = true;
             Loop();
         }
 
+        /// <inheritdoc />
         public void Stop()
         {
             _stopLoopEvent.Set();
         }
 
+        /// <inheritdoc />
         public bool TryWait(TimeSpan timeout)
         {
             return _stoppedEvent.WaitOne(timeout);
@@ -73,27 +113,27 @@ namespace Cyclex
                 {
                     CycleException?.Invoke(this, new CyclicExecutiveExceptionEventArgs(ex));
 
-                    if(PropogateException)
+                    if (PropogateException)
                     {
                         IsRunning = false;
                         throw ex;
                     }
 
-                    if(StopOnException)
+                    if (StopOnException)
                     {
                         shouldStop |= true;
                     }
                 }
-                TimeSpan executionTime = _stopwatch.Elapsed;
 
+                TimeSpan executionTime = _stopwatch.Elapsed;
                 TimeSpan timeDifference = CycleTime - _stopwatch.Elapsed;
                 remainingTime = timeDifference > TimeSpan.Zero ? timeDifference : TimeSpan.Zero;
 
-                if(timeDifference < TimeSpan.Zero)
+                if (timeDifference < TimeSpan.Zero)
                 {
                     CycleOverflow?.Invoke(this, new CyclicExecutiveOverflowEventArgs(_stopwatch.Elapsed, CycleTime));
 
-                    if(StopOnOverflow)
+                    if (StopOnOverflow)
                     {
                         shouldStop |= true;
                     }
@@ -110,41 +150,6 @@ namespace Cyclex
             IsRunning = false;
             _stoppedEvent.Set();
             Stopped?.Invoke(this, EventArgs.Empty);
-        }
-    }
-
-    public class CyclicExecutiveExceptionEventArgs : EventArgs
-    {
-        public Exception Exception { get; private set; }
-        public CyclicExecutiveExceptionEventArgs(Exception exception)
-        {
-            Exception = exception;
-        }
-    }
-
-    public class CyclicExecutiveOverflowEventArgs : EventArgs
-    {
-        public TimeSpan ExecutionTime { get; private set; }
-        public TimeSpan TargetCycleTime { get; private set; }
-        public TimeSpan Overflow => ExecutionTime - TargetCycleTime;
-
-        public CyclicExecutiveOverflowEventArgs(TimeSpan executionTime, TimeSpan targetCycleTime)
-        {
-            ExecutionTime = executionTime;
-            TargetCycleTime = targetCycleTime;
-        }
-    }
-
-    public class CyclicExecutiveCycleCompletedEventArgs : EventArgs
-    {
-        public TimeSpan ExecutionTime { get; private set; }
-        public TimeSpan ActualCycleTime { get; private set; }
-        public double Utilitization => ExecutionTime.TotalMilliseconds / ActualCycleTime.TotalMilliseconds;
-
-        public CyclicExecutiveCycleCompletedEventArgs(TimeSpan executionTime, TimeSpan actualCycleTime)
-        {
-            ExecutionTime = executionTime;
-            ActualCycleTime = actualCycleTime;
         }
     }
 }
