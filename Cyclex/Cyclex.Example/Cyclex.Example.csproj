@@ -1,8 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+	  <Authors>Ronnie Bar-Kochba</Authors>
+	  <Description>Examples of using CyclicExecutive.</Description>
+	  <PackageProjectUrl>https://github.com/rbarkoch/Cyclex</PackageProjectUrl>
+	  <PackageLicenseExpression>MIT</PackageLicenseExpression>
+	  
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
+	  <LangVersion>10.0</LangVersion>
+	  <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
